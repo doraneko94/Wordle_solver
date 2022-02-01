@@ -18,37 +18,43 @@ class Wordle:
             b = ord(c) - 97
             if r == 0:
                 self.fin[b] = True
-                if c in mem_tmp.keys():
-                    mem_tmp[c][0][0] += 1
-                    mem_tmp[c][1].append(i)
-                else:
-                    mem_tmp[c] = [[1, 0, 0], [i]]
+                mem_tmp.setdefault(c, [[0, 0], []])
+                mem_tmp[c][1].append(i)
             if r == 1:
-                if c in mem_tmp.keys():
-                    mem_tmp[c][0][1] += 1
-                    mem_tmp[c][1].append(i)
-                else:
-                    mem_tmp[c] = [[0, 1, 0], [i]]
+                mem_tmp.setdefault(c, [[0, 0], []])
+                mem_tmp[c][0][0] += 1
+                mem_tmp[c][1].append(i)
             if r == 2:
+                mem_tmp.setdefault(c, [[0, 0], []])
+                mem_tmp[c][1].append(i)
+                if self.ans[i] is None:
+                    mem_tmp[c][0][1] += 1
                 self.ans[i] = c
-                if c in mem_tmp.keys():
-                    mem_tmp[c][0][2] += 1
-                    mem_tmp[c][1].append(i)
-                else:
-                    mem_tmp[c] = [[0, 0, 1], [i]]
             
         for c, v in mem_tmp.items():
+            mem_pre = 0
             if c in self.mem.keys():
-                n_mem = max(self.mem[c][0] - v[0][2], v[0][1])
-                if n_mem == 0:
+                mem_pre += self.mem[c][0]
+            ans_pre = 0
+            if c in self.ans:
+                ans_pre += sum([1 if ci == c else 0 for ci in self.ans])
+            ans_pre -= v[0][1]
+            mem_pre -= v[0][1]
+            mem_post = v[0][0] - ans_pre
+            
+            n_mem = max(mem_pre, mem_post)
+            
+            if n_mem <= 0:
+                if c in self.mem.keys():
                     self.mem.pop(c)
-                else:
+            else:
+                if c in self.mem.keys():
                     self.mem[c][0] = n_mem
-                    for i in v[1]:
-                        if i in self.mem[c][1]:
-                            self.mem[c][1].remove(i)
-            elif v[0][1] > 0:
-                self.mem[c] = [v[0][1], [i for i in range(5) if i not in v[1]]]
+                else:
+                    self.mem[c] = [n_mem, [0, 1, 2, 3, 4]]
+                for i in v[1]:
+                    if i in self.mem[c][1]:
+                        self.mem[c][1].remove(i)
         
     def print_all(self):
         
@@ -105,6 +111,30 @@ class Wordle:
                 continue
             p = sum([self.points[ord(c) - 97] for c in chars.keys()])
             cand[w] = p
+            
+        ans_tmp = []
+        for c in self.ans:
+            if c is not None:
+                ans_tmp.append(c)
+        
+        if len(self.mem) == 0 and len(ans_tmp) >= 2 and len(cand) > 1:
+            d = set()
+            for s in cand.keys():
+                for c in s:
+                    d.add(c)
+            for c in set(self.ans):
+                if c is not None:
+                    d.remove(c)
+            
+            cand = {}
+            for w in wd:
+                a_flg = True
+                p = 0
+                for c in d:
+                    if c in w:
+                        p += 1
+                cand[w] = p
+        
         return sorted(cand.items(), key = lambda w : w[1])[::-1]
 
 with open("wordle_dict.pkl", "rb") as f:
