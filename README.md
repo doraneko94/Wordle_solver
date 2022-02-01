@@ -59,3 +59,5 @@ The solver select words in the following way
 3. The word should contain a large number of different letters.
 
 Based on these criteria, the solver calculate a score for each word, and recommend them in order of their value.
+
+So, the best first move with the current dictionary is `arose`.
